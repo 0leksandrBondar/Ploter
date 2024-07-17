@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
         parser.h
         qcustomplot.cpp
         qcustomplot.h
+        graph.h
+        graph.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

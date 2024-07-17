@@ -18,10 +18,6 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void showGraphX(bool checked);
-    void showGraphY(bool checked);
-    void showGraphZ(bool checked);
-
 private:
     void setupGraphs();
     void setupLegend();
@@ -29,16 +25,16 @@ private:
 
     void update();
 
-// slots
+    // slots
+    void onFileButtonClicked(bool checked);
     void onHorzScrollBarChanged(int value);
+    void onItemChanged(QListWidgetItem* item);
 
 protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
     Ui::MainWindow *ui;
-    Parser _parser;
-    QVector<double> _distances;
 
     double _oldScaleRation = 1;
 
