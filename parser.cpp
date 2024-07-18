@@ -14,14 +14,14 @@ void Parser::readCSV(const std::filesystem::path& filename)
     }
 
     std::string line;
-    bool firstLineSkipped = false; // Добавляем флаг для пропуска первой строки
+    bool firstLineSkipped = false;
 
     while (std::getline(file, line))
     {
         if (!firstLineSkipped)
         {
             firstLineSkipped = true;
-            continue; // Пропускаем первую строку
+            continue;
         }
 
         std::istringstream iss(line);
@@ -31,7 +31,7 @@ void Parser::readCSV(const std::filesystem::path& filename)
         int count = 0;
         while (std::getline(iss, token, ','))
         {
-            if (count > 3) // Убираем лишний счетчик
+            if (count > 3)
             {
                 break;
             }
@@ -50,6 +50,14 @@ void Parser::readCSV(const std::filesystem::path& filename)
             xAng.push_back(xAngValue);
             yAng.push_back(yAngValue);
             rssi.push_back(rssiValue);
+        }
+        else if(tokens.size() == 2)
+        {
+            double LatValue = std::stod(tokens[0]);
+            double LonValue = std::stod(tokens[1]);
+
+            lat.push_back(LatValue);
+            lon.push_back(LonValue);
         }
     }
 
