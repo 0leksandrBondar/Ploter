@@ -16,6 +16,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->listWidget, &QListWidget::itemChanged, this, &MainWindow::onItemChanged);
     connect(ui->fileButton, &QPushButton::clicked, this, &MainWindow::onFileButtonClicked);
     connect(ui->xAxisScroll, &QScrollBar::valueChanged, this, &MainWindow::onHorzScrollBarChanged);
+    connect(ui->widget->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
+
+    ui->widget->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+}
+
+void MainWindow::xAxisChanged(QCPRange range)
+{
+    ui->xAxisScroll->setValue(qRound(range.center()*100.0)); // adjust position of scroll bar slider
+    ui->xAxisScroll->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
 
 MainWindow::~MainWindow()
@@ -23,20 +32,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::setupGraphs()
-{
-    setupLegend();
-    //setupScrollBar(maxDistance);
-}
 
 void MainWindow::setupLegend()
 {
     ui->widget->legend->setVisible(true);
-}
-
-void MainWindow::setupScrollBar(const double totalDist)
-{
-    ui->xAxisScroll->setRange(0, totalDist);
 }
 
 void MainWindow::update()
@@ -59,42 +58,53 @@ void MainWindow::update()
     ui->widget->replot();
 }
 
+bool MainWindow::isItemExist(const QString& fileName) const
+{
+    for (int i = 0; i < ui->listWidget->count(); ++i)
+    {
+        if (ui->listWidget->item(i)->text() == fileName)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void MainWindow::onFileButtonClicked(bool checked)
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select tlog"), QApplication::applicationDirPath()+"../../../deserializeFlyData/",
                                                     tr("Points Files (*.csv)"));
 
-    for (int i = 0; i < ui->listWidget->count(); ++i)
+    if(isItemExist(fileName))
     {
-        if (ui->listWidget->item(i)->text() == fileName)
-        {
-            // file already exist do nothing
-            return;
-        }
+        // file already exist do nothing
+        return;
     }
+    else
+    {
+        ui->fileNameLable->setText(fileName);
 
-    ui->fileNameLable->setText(fileName);
+        setupLegend();
+        Graph *item = new Graph(fileName, ui->xAxisScroll, ui->widget, ui->listWidget);
+        item->initGraphs(fileName.toStdString());
+        item->setCheckState(Qt::Checked);
 
+        item->showGraphX(ui->buttonX->isChecked());
+        item->showGraphY(ui->buttonY->isChecked());
+        item->showGraphRSSI(ui->buttonZ->isChecked());
 
-    setupGraphs();
-    Graph *item = new Graph(fileName,ui->widget, ui->listWidget);
-    item->initGraphs(fileName.toStdString());
-    item->setCheckState(Qt::Checked);
-
-    item->showGraphX(ui->buttonX->isChecked());
-    item->showGraphY(ui->buttonY->isChecked());
-    item->showGraphRSSI(ui->buttonZ->isChecked());
-
-    ui->listWidget->addItem(item);
-    update();
+        ui->listWidget->addItem(item);
+        update();
+    }
 }
 
 void MainWindow::onHorzScrollBarChanged(int value)
 {
     QCPAxis* xAxis = ui->widget->xAxis;
-    if (qAbs(xAxis->range().center() - value) > 0.01)
+
+    if (qAbs(xAxis->range().center()-value/10.0) > 0.01) // if user is dragging plot, we don't want to replot twice
     {
-        xAxis->setRange(value, xAxis->range().size(), Qt::AlignCenter);
+        xAxis->setRange(value/10.0, xAxis->range().size(), Qt::AlignCenter);
         update();
     }
 }

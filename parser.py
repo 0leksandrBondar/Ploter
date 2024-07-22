@@ -1,4 +1,3 @@
-
 import os
 from pymavlink import mavutil
 import csv
@@ -14,6 +13,8 @@ tlog_files = [f for f in os.listdir(source_folder) if f.endswith('.tlog')]
 for tlog_file in tlog_files:
     mavlog = mavutil.mavlink_connection(os.path.join(source_folder, tlog_file))
     selected_data = []
+    selected_data_latLon = []
+
     while True:
         msg = mavlog.recv_match(blocking=False)
         if msg is None:
@@ -27,20 +28,17 @@ for tlog_file in tlog_files:
             y_ang = msg.y
             RSSI = msg.z
             time_ms = mavlog.time_since('boot') * 1e3
-            selected_data.append((time_ms, x_ang, y_ang, RSSI))
+            selected_data.append(('DEBUG_VECT',time_ms, x_ang, y_ang, RSSI))
+
         if msg.get_type() == 'GLOBAL_POSITION_INT':
             Lat = msg.lat
             Lon = msg.lon
-            selected_data.append((Lat, Lon))
+            selected_data.append(('GLOBAL_POSITION_INT', Lat, Lon))
 
-        if msg.get_type() == 'GPS_GLOBAL_ORIGIN ':
-            gLat = msg.latitude
-            gLon = msg.longitude
-            gAlt = msg.altitude
-            selected_data.append((gLat, gLon))
-            print("gLat = " + gLat)
-            print("gLon = " + gLon)
-            print("gAlt = " + gAlt)
+        if msg.get_type() == 'GPS_GLOBAL_ORIGIN':
+            gpsLat = msg.latitude
+            gpsLon = msg.longitude
+            selected_data.append(('GPS_GLOBAL_ORIGIN', gpsLat, gpsLon))
 
     output_csv = os.path.join(output_folder, os.path.splitext(tlog_file)[0] + '.csv')
     with open(output_csv, 'w', newline='') as csvfile:
@@ -48,4 +46,4 @@ for tlog_file in tlog_files:
         csvwriter.writerow(['Time', 'x_ang', 'y_ang', 'RSSI'])
         csvwriter.writerows(selected_data)
 
-print(f"processed {len(tlog_files)} files .tlog. Files .csv saved in folder {output_folder}.")
+print(f"Обработано {len(tlog_files)} файлов .tlog. Файлы .csv сохранены в папке {output_folder}.")

@@ -1,67 +1,68 @@
 #include "parser.h"
 
-#include <iostream>
 #include <fstream>
 #include <sstream>
 
-void Parser::readCSV(const std::filesystem::path& filename)
+void Parser::readCSV(const std::filesystem::path &filename)
 {
     std::ifstream file(filename);
-    if (!file.is_open())
+    if (file.is_open())
     {
-        std::cerr << "Can't open file " << filename << std::endl;
-        return;
-    }
+        std::string line;
+        bool firstLineSkipped = false;
 
-    std::string line;
-    bool firstLineSkipped = false;
-
-    while (std::getline(file, line))
-    {
-        if (!firstLineSkipped)
+        while (std::getline(file, line))
         {
-            firstLineSkipped = true;
-            continue;
-        }
-
-        std::istringstream iss(line);
-        std::string token;
-        std::vector<std::string> tokens;
-
-        int count = 0;
-        while (std::getline(iss, token, ','))
-        {
-            if (count > 3)
+            if (!firstLineSkipped)
             {
-                break;
+                firstLineSkipped = true;
+                continue;
             }
-            tokens.push_back(token);
-            count++;
-        }
 
-        if (tokens.size() == 4)
-        {
-            double timeValue = std::stod(tokens[0]);
-            double xAngValue = std::stod(tokens[1]);
-            double yAngValue = std::stod(tokens[2]);
-            double rssiValue = std::stod(tokens[3]);
+            std::string token;
+            std::istringstream iss(line);
+            std::vector<std::string> tokens;
 
-            time.push_back(timeValue);
-            xAng.push_back(xAngValue);
-            yAng.push_back(yAngValue);
-            rssi.push_back(rssiValue);
-        }
-        else if(tokens.size() == 2)
-        {
-            double LatValue = std::stod(tokens[0]);
-            double LonValue = std::stod(tokens[1]);
+            while(std::getline(iss, token, ','))
+            {
+                tokens.push_back(token);
+            }
 
-            lat.push_back(LatValue);
-            lon.push_back(LonValue);
+            if(tokens[0] == "GPS_GLOBAL_ORIGIN")
+            {
+                homeLat = std::stod(tokens[1]);
+                homeLon = std::stod(tokens[2]);
+            }
+            else if(tokens[0] == "GLOBAL_POSITION_INT")
+            {
+                lat.push_back(std::stod(tokens[1]));
+                lon.push_back(std::stod(tokens[2]));
+            }
+            else if(tokens[0] == "DEBUG_VECT")
+            {
+                time.push_back(std::stod(tokens[1]));
+                xAng.push_back(std::stod(tokens[2]));
+                yAng.push_back(std::stod(tokens[3]));
+                rssi.push_back(std::stod(tokens[4]));
+            }
         }
     }
-
     file.close();
+
+    toDeg();
+    revers();
+}
+
+void Parser::toDeg()
+{
+    for (int var = 0; var < lat.size(); ++var)
+        lat[var] /= 10000000;
+
+    for (int var = 0; var < lon.size(); ++var)
+        lon[var] /= 10000000;
+
+    homeLat /=  10000000;
+    homeLon /=  10000000;
 }
 
 void Parser::reset()
@@ -70,4 +71,16 @@ void Parser::reset()
     xAng.clear();
     yAng.clear();
     rssi.clear();
+    lat.clear();
+    lon.clear();
+}
+
+void Parser::revers()
+{
+    //std::reverse(time.begin(), time.end());
+    //std::reverse(xAng.begin(), xAng.end());
+    //std::reverse(yAng.begin(), yAng.end());
+    //std::reverse(rssi.begin(), rssi.end());
+    //std::reverse(lat.begin(), lat.end());
+    //std::reverse(lon.begin(), lon.end());
 }

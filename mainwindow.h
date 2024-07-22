@@ -1,8 +1,9 @@
 #pragma once
 
-#include "parser.h"
+
 #include "qcustomplot.h"
 
+#include <QListWidgetItem>
 #include <QMainWindow>
 #include <QVector>
 
@@ -19,13 +20,14 @@ public:
     ~MainWindow();
 
 private:
-    void setupGraphs();
     void setupLegend();
-    void setupScrollBar(const double totalDist);
 
     void update();
 
+    bool isItemExist(const QString& fileName) const;
+
     // slots
+    void xAxisChanged(QCPRange range);
     void onFileButtonClicked(bool checked);
     void onHorzScrollBarChanged(int value);
     void onItemChanged(QListWidgetItem* item);
@@ -37,8 +39,5 @@ private:
     Ui::MainWindow *ui;
 
     double _oldScaleRation = 1;
-
-    QCPGraph *_graphX;
-    QCPGraph *_graphY;
-    QCPGraph *_graphZ;
+    double _maxDistance = 0.0;
 };
